@@ -1,5 +1,5 @@
 package keys
 
 type KeyGenerator interface {
-	GenerateKeyPair(userID int) error
+	GenerateKeyPair() (string, string, string, error)
 }

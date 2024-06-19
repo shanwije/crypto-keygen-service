@@ -7,7 +7,11 @@ import (
 )
 
 func TestGetKeyGenerator(t *testing.T) {
-	generator, err := GetKeyGenerator("unsupported")
+	generator, err := GetKeyGenerator("bitcoin")
+	assert.NoError(t, err)
+	assert.NotNil(t, generator)
+
+	generator, err = GetKeyGenerator("unsupported")
 	assert.Error(t, err)
 	assert.Nil(t, generator)
 }

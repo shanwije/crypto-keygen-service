@@ -1,10 +1,15 @@
 package keys
 
-import "errors"
+import (
+	"crypto-keygen-service/internal/bitcoin"
+	"errors"
+)
 
 func GetKeyGenerator(network string) (KeyGenerator, error) {
-    switch network {
-    default:
-        return nil, errors.ErrUnsupported
-    }
+	switch network {
+	case "bitcoin":
+		return &bitcoin.BitcoinKeyGen{}, nil
+	default:
+		return nil, errors.ErrUnsupported
+	}
 }
