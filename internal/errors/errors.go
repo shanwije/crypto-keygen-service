@@ -12,7 +12,9 @@ func (e *APIError) Error() string {
 }
 
 var (
-	ErrUnsupportedNetwork = &APIError{Code: 400, Message: "Unsupported network"}
+	ErrInvalidUserID       = &APIError{Code: 400, Message: "Invalid user ID"}
+	ErrUnsupportedNetwork  = &APIError{Code: 400, Message: "Unsupported network"}
+	ErrInternalServerError = &APIError{Code: 500, Message: "Internal server error"}
 )
 
 func NewAPIError(code int, message string) *APIError {
