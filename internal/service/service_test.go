@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"crypto-keygen-service/internal/bitcoin"
-	"crypto-keygen-service/internal/ethereum"
 	"crypto-keygen-service/internal/repository"
+	"crypto-keygen-service/internal/util/currency_factory/generators/bitcoin"
+	"crypto-keygen-service/internal/util/currency_factory/generators/ethereum"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -23,7 +23,7 @@ func TestGenerateAndRetrieveKeyPair(t *testing.T) {
 	// Clear the test DB
 	client.Database("crypto-keygen-service-test").Drop(context.Background())
 
-	repo := repository.NewMongoRepository(client, "crypto-keygen-service-test", "keys")
+	repo := repository.NewMongoRepository(client, "crypto-keygen-service-test", "currency_factory")
 	keyService := NewKeyService(repo)
 	keyService.RegisterGenerator("bitcoin", &bitcoin.BitcoinKeyGen{})
 	keyService.RegisterGenerator("ethereum", &ethereum.EthereumKeyGen{})

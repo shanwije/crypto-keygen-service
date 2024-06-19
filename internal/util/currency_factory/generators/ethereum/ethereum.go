@@ -1,7 +1,7 @@
 package ethereum
 
 import (
-	"crypto-keygen-service/internal/errors"
+	"crypto-keygen-service/internal/util/errors"
 	"encoding/hex"
 	"github.com/ethereum/go-ethereum/crypto"
 )

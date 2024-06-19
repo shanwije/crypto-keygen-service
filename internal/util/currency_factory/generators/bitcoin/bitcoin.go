@@ -1,7 +1,7 @@
 package bitcoin
 
 import (
-	"crypto-keygen-service/internal/errors"
+	"crypto-keygen-service/internal/util/errors"
 	"encoding/hex"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"

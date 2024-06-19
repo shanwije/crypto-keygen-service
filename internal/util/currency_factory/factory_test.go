@@ -1,4 +1,4 @@
-package keys
+package currency_factory
 
 import (
 	"testing"

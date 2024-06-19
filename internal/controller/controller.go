@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"crypto-keygen-service/internal/errors"
 	"crypto-keygen-service/internal/service"
+	"crypto-keygen-service/internal/util/errors"
 	"github.com/gin-gonic/gin"
 	"gopkg.in/go-playground/validator.v9"
 	"net/http"

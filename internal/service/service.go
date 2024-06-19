@@ -1,23 +1,23 @@
 package service
 
 import (
-	"crypto-keygen-service/internal/bitcoin"
-	"crypto-keygen-service/internal/crypto"
-	"crypto-keygen-service/internal/errors"
-	"crypto-keygen-service/internal/ethereum"
-	"crypto-keygen-service/internal/keys"
 	"crypto-keygen-service/internal/repository"
+	"crypto-keygen-service/internal/util/crypto"
+	"crypto-keygen-service/internal/util/currency_factory"
+	"crypto-keygen-service/internal/util/currency_factory/generators/bitcoin"
+	"crypto-keygen-service/internal/util/currency_factory/generators/ethereum"
+	"crypto-keygen-service/internal/util/errors"
 	"log"
 )
 
 type KeyService struct {
-	generators map[string]keys.KeyGenerator
+	generators map[string]currency_factory.KeyGenerator
 	repository repository.Repository
 }
 
 func NewKeyService(repo repository.Repository) *KeyService {
 	service := &KeyService{
-		generators: make(map[string]keys.KeyGenerator),
+		generators: make(map[string]currency_factory.KeyGenerator),
 		repository: repo,
 	}
 	service.RegisterGenerator("bitcoin", &bitcoin.BitcoinKeyGen{})
@@ -26,7 +26,7 @@ func NewKeyService(repo repository.Repository) *KeyService {
 	return service
 }
 
-func (s *KeyService) RegisterGenerator(network string, generator keys.KeyGenerator) {
+func (s *KeyService) RegisterGenerator(network string, generator currency_factory.KeyGenerator) {
 	s.generators[network] = generator
 }
 

@@ -1,12 +1,12 @@
-package bitcoin_test
+package ethereum_test
 
 import (
-	"crypto-keygen-service/internal/bitcoin"
+	"crypto-keygen-service/internal/util/currency_factory/generators/ethereum"
 	"testing"
 )
 
 func TestGenerateKeyPair(t *testing.T) {
-	keyGen := &bitcoin.BitcoinKeyGen{}
+	keyGen := &ethereum.EthereumKeyGen{}
 
 	address, publicKey, privateKey, err := keyGen.GenerateKeyPair()
 	if err != nil {
@@ -14,7 +14,7 @@ func TestGenerateKeyPair(t *testing.T) {
 	}
 
 	if len(address) == 0 {
-		t.Errorf("Expected a valid Bitcoin address, got an empty string")
+		t.Errorf("Expected a valid Ethereum address, got an empty string")
 	}
 	if len(publicKey) == 0 {
 		t.Errorf("Expected a valid public key, got an empty string")

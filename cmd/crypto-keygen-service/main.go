@@ -35,7 +35,7 @@ func main() {
 		log.Fatalf("Failed to ping MongoDB: %v", err)
 	}
 
-	repo := repository.NewMongoRepository(client, "crypto-keygen-service", "keys")
+	repo := repository.NewMongoRepository(client, "crypto-keygen-service", "currency_factory")
 
 	keyService := service.NewKeyService(repo)
 
