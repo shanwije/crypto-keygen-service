@@ -38,7 +38,7 @@ func handleGenerateKeyPair(c *gin.Context, keyService *service.KeyService) {
 	userID := req.UserID
 	network := req.Network
 
-	address, publicKey, privateKey, err := keyService.GenerateKeyPair(userID, network)
+	address, publicKey, privateKey, err := keyService.GetKeysAndAddress(userID, network)
 	if err != nil {
 		if apiErr, ok := err.(*errors.APIError); ok {
 			c.JSON(apiErr.Code, gin.H{"error": apiErr.Message})
