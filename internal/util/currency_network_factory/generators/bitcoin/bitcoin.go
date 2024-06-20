@@ -33,10 +33,7 @@ func (g *BitcoinKeyGen) GenerateKeyPair() (string, string, string, error) {
 		return "", "", "", errors.NewAPIError(500, "Failed to encode Bitcoin private key to WIF")
 	}
 
-	log.WithFields(log.Fields{
-		"address":    address.EncodeAddress(),
-		"public_key": publicKeyHex,
-	}).Info("Generated Bitcoin key pair")
+	log.Info("Generated Bitcoin key pair")
 
 	return address.EncodeAddress(), publicKeyHex, privateKeyWIF.String(), nil
 }

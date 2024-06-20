@@ -5,6 +5,7 @@ import (
 	"crypto-keygen-service/internal/repositories"
 	"crypto-keygen-service/internal/util/currency_network_factory/generators/bitcoin"
 	"crypto-keygen-service/internal/util/currency_network_factory/generators/ethereum"
+	"crypto-keygen-service/internal/util/encryption"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -12,6 +13,17 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+const sampleEncryptionKey = "4GRrhM8ClnrSmCrDvyFzPKdkJF9NcRkKwxlmIrsYhx0="
+
+func TestMain(m *testing.M) {
+	err := encryption.Setup(sampleEncryptionKey)
+	if err != nil {
+		panic("Failed to set up encryption: " + err.Error())
+	}
+
+	m.Run()
+}
 
 func TestGenerateAndRetrieveKeyPair(t *testing.T) {
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
