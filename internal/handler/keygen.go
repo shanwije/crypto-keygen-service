@@ -2,6 +2,8 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"crypto-keygen-service/internal/services"
 	"crypto-keygen-service/internal/util/errors"
@@ -14,8 +16,8 @@ import (
 var validate *validator.Validate
 
 type KeyGenRequest struct {
-	UserID  int    `uri:"userId" validate:"required"`
-	Network string `uri:"network" validate:"required,oneof=bitcoin ethereum"`
+	UserID  int    `uri:"userId" validate:"required,gt=0"`
+	Network string `uri:"network" validate:"required"`
 }
 
 type KeyGenHandler struct {
@@ -33,15 +35,28 @@ func (h *KeyGenHandler) RegisterRoutes(router *gin.Engine) {
 
 func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 	var req KeyGenRequest
-	if err := c.ShouldBindUri(&req); err != nil {
-		log.WithError(err).Error("Invalid request parameters")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request parameters"})
+
+	// Validate userId manually to handle non-integer values gracefully
+	userIdStr := c.Param("userId")
+	userId, err := strconv.Atoi(userIdStr)
+	if err != nil || userId <= 0 {
+		log.WithError(err).Error("Invalid userId parameter")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId must be a positive integer"})
+		return
+	}
+	req.UserID = userId
+
+	// Validations for network and userId
+	req.Network = c.Param("network")
+	if req.Network == "" {
+		log.Error("Network parameter is required")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Network is required"})
 		return
 	}
 
 	if err := validate.Struct(req); err != nil {
 		log.WithError(err).Error("Validation error")
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": h.formatValidationError(err)})
 		return
 	}
 
@@ -73,4 +88,25 @@ func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 		"public_key":  publicKey,
 		"private_key": privateKey,
 	})
+}
+
+func (h *KeyGenHandler) formatValidationError(err error) string {
+	var sb strings.Builder
+	for _, err := range err.(validator.ValidationErrors) {
+		switch err.Field() {
+		case "UserID":
+			if err.Tag() == "required" {
+				sb.WriteString("UserID is required. ")
+			} else if err.Tag() == "numeric" {
+				sb.WriteString("UserID must be a numeric value. ")
+			} else if err.Tag() == "gt" {
+				sb.WriteString("UserID must be greater than 0. ")
+			}
+		case "Network":
+			if err.Tag() == "required" {
+				sb.WriteString("Network is required. ")
+			}
+		}
+	}
+	return strings.TrimSpace(sb.String())
 }
