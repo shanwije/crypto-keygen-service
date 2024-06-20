@@ -1,8 +1,8 @@
-package currency_factory
+package currency_network_factory
 
 import (
-	"crypto-keygen-service/internal/util/currency_factory/generators/bitcoin"
-	"crypto-keygen-service/internal/util/currency_factory/generators/ethereum"
+	"crypto-keygen-service/internal/util/currency_network_factory/generators/bitcoin"
+	"crypto-keygen-service/internal/util/currency_network_factory/generators/ethereum"
 	"crypto-keygen-service/internal/util/errors"
 )
 

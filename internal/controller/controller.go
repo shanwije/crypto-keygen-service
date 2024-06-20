@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"net/http"
+
 	"crypto-keygen-service/internal/service"
 	"crypto-keygen-service/internal/util/errors"
+
 	"github.com/gin-gonic/gin"
 	"gopkg.in/go-playground/validator.v9"
-	"net/http"
 )
 
 var validate *validator.Validate
@@ -15,15 +17,20 @@ type GenerateRequest struct {
 	Network string `uri:"network" validate:"required,oneof=bitcoin ethereum"`
 }
 
-func RegisterRoutes(router *gin.Engine, keyService *service.KeyService) {
-	router.GET("/generate/:userId/:network", func(c *gin.Context) {
-		handleGenerateKeyPair(c, keyService)
-	})
+type KeyController struct {
+	keyService *service.KeyService
 }
 
-func handleGenerateKeyPair(c *gin.Context, keyService *service.KeyService) {
+func NewKeyController(keyService *service.KeyService) *KeyController {
 	validate = validator.New()
+	return &KeyController{keyService: keyService}
+}
 
+func (kc *KeyController) RegisterRoutes(router *gin.Engine) {
+	router.GET("/generate/:userId/:network", kc.handleGenerateKeyPair)
+}
+
+func (kc *KeyController) handleGenerateKeyPair(c *gin.Context) {
 	var req GenerateRequest
 	if err := c.ShouldBindUri(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request parameters"})
@@ -35,10 +42,7 @@ func handleGenerateKeyPair(c *gin.Context, keyService *service.KeyService) {
 		return
 	}
 
-	userID := req.UserID
-	network := req.Network
-
-	address, publicKey, privateKey, err := keyService.GetKeysAndAddress(userID, network)
+	address, publicKey, privateKey, err := kc.keyService.GetKeysAndAddress(req.UserID, req.Network)
 	if err != nil {
 		if apiErr, ok := err.(*errors.APIError); ok {
 			c.JSON(apiErr.Code, gin.H{"error": apiErr.Message})

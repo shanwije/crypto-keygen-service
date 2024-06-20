@@ -1,4 +1,4 @@
-package currency_factory
+package currency_network_factory
 
 import (
 	"testing"

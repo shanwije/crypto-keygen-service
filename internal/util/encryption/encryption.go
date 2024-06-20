@@ -1,23 +1,33 @@
-package crypto
+package encryption
 
 import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/chacha20poly1305"
 	"io"
+
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 var key []byte
 
-// todo: add a static key and move to .env
-func init() {
-	key = make([]byte, chacha20poly1305.KeySize)
-	fmt.Println("key: ", string(key))
-	if _, err := rand.Read(key); err != nil {
-		panic(err)
+func Setup(keyString string) error {
+	if keyString == "" {
+		return errors.New("ENCRYPTION_KEY not set")
 	}
+
+	var err error
+	key, err = base64.StdEncoding.DecodeString(keyString)
+	if err != nil {
+		return fmt.Errorf("invalid ENCRYPTION_KEY: %w", err)
+	}
+
+	if len(key) != chacha20poly1305.KeySize {
+		return fmt.Errorf("ENCRYPTION_KEY must be %d bytes long", chacha20poly1305.KeySize)
+	}
+
+	return nil
 }
 
 func Encrypt(plaintext string) (string, error) {
@@ -26,7 +36,7 @@ func Encrypt(plaintext string) (string, error) {
 		return "", err
 	}
 
-	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(plaintext)+aead.Overhead())
+	nonce := make([]byte, aead.NonceSize())
 	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
 		return "", err
 	}
