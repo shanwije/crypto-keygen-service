@@ -7,6 +7,7 @@ import (
 	"crypto-keygen-service/internal/util/currency_network_factory/generators/ethereum"
 	"crypto-keygen-service/internal/util/encryption"
 	"crypto-keygen-service/internal/util/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 type KeyGenService struct {
@@ -14,13 +15,13 @@ type KeyGenService struct {
 	repository repositories.KeyGenRepository
 }
 
-func NewKeyGenService(repo repositories.KeyGenRepository) *KeyGenService {
+func NewKeyGenService(repo repositories.KeyGenRepository, masterSeed []byte) *KeyGenService {
 	service := &KeyGenService{
 		generators: make(map[string]currency_network_factory.KeyGenerator),
 		repository: repo,
 	}
-	service.RegisterGenerator("bitcoin", &bitcoin.BitcoinKeyGen{})
-	service.RegisterGenerator("ethereum", &ethereum.EthereumKeyGen{})
+	service.RegisterGenerator("bitcoin", &bitcoin.BitcoinKeyGen{MasterSeed: masterSeed})
+	service.RegisterGenerator("ethereum", &ethereum.EthereumKeyGen{MasterSeed: masterSeed})
 	// Add more networks here
 	return service
 }
@@ -64,7 +65,7 @@ func (s *KeyGenService) generateAndSaveKeys(userID int, network string) (string,
 		return "", "", "", errors.ErrUnsupportedNetwork
 	}
 
-	address, publicKey, privateKey, err := generator.GenerateKeyPair()
+	address, publicKey, privateKey, err := generator.GenerateKeyPair(userID)
 	if err != nil {
 		return "", "", "", err
 	}
