@@ -62,7 +62,7 @@ func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 
 	address, publicKey, privateKey, err := h.keyService.GetKeysAndAddress(req.UserID, req.Network)
 	if err != nil {
-		if apiErr, ok := err.(*errors.APIError); ok {
+		if apiErr, ok := err.(*errors.KeyGenError); ok {
 			log.WithFields(log.Fields{
 				"user_id": req.UserID,
 				"network": req.Network,

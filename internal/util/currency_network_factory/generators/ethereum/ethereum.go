@@ -21,7 +21,7 @@ func (g *EthereumKeyGen) GenerateKeyPair(userID int) (string, string, string, er
 	privateKey, err := crypto.ToECDSA(userSeed)
 	if err != nil {
 		log.WithError(err).Error("Failed to generate Ethereum private key")
-		return "", "", "", errors.NewAPIError(500, "Failed to generate Ethereum private key")
+		return "", "", "", errors.NewKeyGenError(500, "Failed to generate Ethereum private key")
 	}
 
 	privateKeyHex := hex.EncodeToString(crypto.FromECDSA(privateKey))

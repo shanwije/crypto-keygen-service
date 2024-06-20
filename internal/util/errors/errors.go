@@ -2,20 +2,20 @@ package errors
 
 import "fmt"
 
-type APIError struct {
+type KeyGenError struct {
 	Code    int
 	Message string
 }
 
-func (e *APIError) Error() string {
+func (e *KeyGenError) Error() string {
 	return fmt.Sprintf("Code: %d, Message: %s", e.Code, e.Message)
 }
 
 var (
-	ErrUnsupportedNetwork  = &APIError{Code: 400, Message: "Unsupported network"}
-	ErrInternalServerError = &APIError{Code: 500, Message: "Internal server error"}
+	ErrUnsupportedNetwork  = &KeyGenError{Code: 400, Message: "Unsupported network"}
+	ErrInternalServerError = &KeyGenError{Code: 500, Message: "Internal server error"}
 )
 
-func NewAPIError(code int, message string) *APIError {
-	return &APIError{Code: code, Message: message}
+func NewKeyGenError(code int, message string) *KeyGenError {
+	return &KeyGenError{Code: code, Message: message}
 }
