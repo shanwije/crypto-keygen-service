@@ -1,4 +1,4 @@
-package handler
+package handlers
 
 import (
 	"net/http"
@@ -56,25 +56,13 @@ func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 
 	if err := validate.Struct(req); err != nil {
 		log.WithError(err).Error("Validation error")
-		c.JSON(http.StatusBadRequest, gin.H{"error": h.formatValidationError(err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": formatValidationError(err)})
 		return
 	}
 
-	address, publicKey, privateKey, err := h.keyService.GetKeysAndAddress(req.UserID, req.Network)
+	keyPairAndAddress, err := h.keyService.GetKeysAndAddress(req.UserID, req.Network)
 	if err != nil {
-		if apiErr, ok := err.(*errors.APIError); ok {
-			log.WithFields(log.Fields{
-				"user_id": req.UserID,
-				"network": req.Network,
-			}).WithError(apiErr).Error("API error")
-			c.JSON(apiErr.Code, gin.H{"error": apiErr.Message})
-		} else {
-			log.WithFields(log.Fields{
-				"user_id": req.UserID,
-				"network": req.Network,
-			}).WithError(err).Error("Internal server error")
-			c.JSON(http.StatusInternalServerError, gin.H{"error": errors.ErrInternalServerError.Message})
-		}
+		handleServiceError(c, err, req.UserID, req.Network)
 		return
 	}
 
@@ -83,23 +71,22 @@ func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 		"network": req.Network,
 	}).Info("Successfully acquired keys")
 
-	c.JSON(http.StatusOK, gin.H{
-		"address":     address,
-		"public_key":  publicKey,
-		"private_key": privateKey,
+	c.JSON(http.StatusOK, KeyGenResponse{
+		Address:    keyPairAndAddress.Address,
+		PublicKey:  keyPairAndAddress.PublicKey,
+		PrivateKey: keyPairAndAddress.PrivateKey,
 	})
 }
 
-func (h *KeyGenHandler) formatValidationError(err error) string {
+func formatValidationError(err error) string {
 	var sb strings.Builder
 	for _, err := range err.(validator.ValidationErrors) {
 		switch err.Field() {
 		case "UserID":
-			if err.Tag() == "required" {
+			switch err.Tag() {
+			case "required":
 				sb.WriteString("UserID is required. ")
-			} else if err.Tag() == "numeric" {
-				sb.WriteString("UserID must be a numeric value. ")
-			} else if err.Tag() == "gt" {
+			case "gt":
 				sb.WriteString("UserID must be greater than 0. ")
 			}
 		case "Network":
@@ -109,4 +96,20 @@ func (h *KeyGenHandler) formatValidationError(err error) string {
 		}
 	}
 	return strings.TrimSpace(sb.String())
+}
+
+func handleServiceError(c *gin.Context, err error, userID int, network string) {
+	if apiErr, ok := err.(*errors.KeyGenError); ok {
+		log.WithFields(log.Fields{
+			"user_id": userID,
+			"network": network,
+		}).WithError(apiErr).Error("API error")
+		c.JSON(apiErr.Code, gin.H{"error": apiErr.Message})
+	} else {
+		log.WithFields(log.Fields{
+			"user_id": userID,
+			"network": network,
+		}).WithError(err).Error("Internal server error")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": errors.ErrInternalServerError.Message})
+	}
 }
