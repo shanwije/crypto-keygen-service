@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  crypto-keygen-service:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017
+    depends_on:
+      mongo:
+        condition: service_started
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo.conf:/etc/mongo/mongo.conf
+    command: ["mongod", "--config", "/etc/mongo/mongo.conf"]
+
+volumes:
+  mongo-data:
