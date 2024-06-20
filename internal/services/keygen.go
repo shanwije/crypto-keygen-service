@@ -1,6 +1,8 @@
 package services
 
 import (
+	"context"
+	"crypto-keygen-service/internal/db"
 	"crypto-keygen-service/internal/network_factory"
 	"crypto-keygen-service/internal/network_factory/generators/bitcoin"
 	"crypto-keygen-service/internal/network_factory/generators/ethereum"
@@ -12,10 +14,10 @@ import (
 
 type KeyGenService struct {
 	generators map[string]network_factory.KeyGenerator
-	repository repositories.KeyGenRepository
+	repository *repositories.KeyGenRepository
 }
 
-func NewKeyGenService(repo repositories.KeyGenRepository, masterSeed []byte) *KeyGenService {
+func NewKeyGenService(repo *repositories.KeyGenRepository, masterSeed []byte) *KeyGenService {
 	service := &KeyGenService{
 		generators: make(map[string]network_factory.KeyGenerator),
 		repository: repo,
@@ -36,21 +38,22 @@ func (s *KeyGenService) GetKeysAndAddress(userID int, network string) (network_f
 		"network": network,
 	}).Info("Request to get keys and address")
 
-	exists, err := s.repository.KeyExists(userID, network)
+	ctx := context.Background()
+	exists, err := s.repository.KeyExists(ctx, userID, network)
 	if err != nil {
 		log.WithError(err).Error("Failed to check if keys exist")
 		return network_factory.KeyPairAndAddress{}, err
 	}
 
 	if exists {
-		return s.retrieveExistingKeys(userID, network)
+		return s.retrieveExistingKeys(ctx, userID, network)
 	}
 
-	return s.generateAndSaveKeys(userID, network)
+	return s.generateAndSaveKeys(ctx, userID, network)
 }
 
-func (s *KeyGenService) retrieveExistingKeys(userID int, network string) (network_factory.KeyPairAndAddress, error) {
-	keyData, err := s.repository.GetKey(userID, network)
+func (s *KeyGenService) retrieveExistingKeys(ctx context.Context, userID int, network string) (network_factory.KeyPairAndAddress, error) {
+	keyData, err := s.repository.GetKey(ctx, userID, network)
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve existing keys")
 		return network_factory.KeyPairAndAddress{}, err
@@ -69,7 +72,7 @@ func (s *KeyGenService) retrieveExistingKeys(userID int, network string) (networ
 	}, nil
 }
 
-func (s *KeyGenService) generateAndSaveKeys(userID int, network string) (network_factory.KeyPairAndAddress, error) {
+func (s *KeyGenService) generateAndSaveKeys(ctx context.Context, userID int, network string) (network_factory.KeyPairAndAddress, error) {
 	generator, exists := s.generators[network]
 	if !exists {
 		log.WithFields(log.Fields{
@@ -90,7 +93,7 @@ func (s *KeyGenService) generateAndSaveKeys(userID int, network string) (network
 		return network_factory.KeyPairAndAddress{}, err
 	}
 
-	keyData := repositories.KeyData{
+	keyData := db.KeyData{
 		UserID:              userID,
 		Network:             network,
 		Address:             keyPairAndAddress.Address,
@@ -98,7 +101,7 @@ func (s *KeyGenService) generateAndSaveKeys(userID int, network string) (network
 		EncryptedPrivateKey: encryptedPrivateKey,
 	}
 
-	err = s.repository.SaveKey(userID, network, keyData)
+	err = s.repository.SaveKey(ctx, keyData)
 	if err != nil {
 		log.WithError(err).Error("Failed to save keys")
 		return network_factory.KeyPairAndAddress{}, err

@@ -2,6 +2,8 @@ package services_test
 
 import (
 	"context"
+	"crypto-keygen-service/internal/db"
+	mongoDB "crypto-keygen-service/internal/db/mongo"
 	"crypto-keygen-service/internal/repositories"
 	"crypto-keygen-service/internal/services"
 	"crypto-keygen-service/internal/util/encryption"
@@ -27,35 +29,42 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func setupMongoRepository() *repositories.MongoRepository {
-	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
+func setupDatabase() db.Database {
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		panic(err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err = client.Connect(ctx)
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	return repositories.NewMongoRepository(client, "crypto-keygen-service-test", "crypto-wallet-service")
+	mongoDatabase, err := mongoDB.NewMongoDatabase("mongodb://localhost:27017", "crypto-keygen-service-test", "crypto-wallet-service")
+	if err != nil {
+		panic(err)
+	}
+
+	return mongoDatabase
 }
 
-func setupKeyGenService(repo repositories.KeyGenRepository) *services.KeyGenService {
+func setupKeyGenService(database db.Database) *services.KeyGenService {
+	repo := repositories.NewKeyGenRepository(database)
 	return services.NewKeyGenService(repo, []byte(sampleMasterSeed))
 }
 
 func TestServiceIntegration(t *testing.T) {
-	repo := setupMongoRepository()
-	service := setupKeyGenService(repo)
+	database := setupDatabase()
+	service := setupKeyGenService(database)
 
 	userID := 12345
 	bitcoinNetwork := "bitcoin"
 	ethereumNetwork := "ethereum"
 
-	// Clean up any existing data
-	_, _ = repo.Collection.DeleteMany(context.Background(), bson.M{"user_id": userID})
+	// Clean up
+	_, _ = database.(*mongoDB.MongoDatabase).Collection.DeleteMany(context.Background(), bson.M{"user_id": userID})
 
 	// Test Bitcoin key generation and retrieval
 	btcResult1, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
@@ -78,4 +87,6 @@ func TestServiceIntegration(t *testing.T) {
 	ethResult2, err := service.GetKeysAndAddress(userID, ethereumNetwork)
 	assert.NoError(t, err, "Expected no error for Ethereum key generation")
 	assert.Equal(t, ethResult1, ethResult2, "Expected same keys for repeated Ethereum key generation")
+
+	_, _ = database.(*mongoDB.MongoDatabase).Collection.DeleteMany(context.Background(), bson.M{"user_id": userID})
 }

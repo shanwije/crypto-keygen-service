@@ -1,23 +1,19 @@
 package main
 
 import (
-	"context"
+	"crypto-keygen-service/internal/db/mongo"
 	"crypto-keygen-service/internal/util/encryption"
 	"log"
 	"os"
-	"time"
 
-	"crypto-keygen-service/internal/handler"
+	"crypto-keygen-service/internal/handlers"
 	"crypto-keygen-service/internal/repositories"
 	"crypto-keygen-service/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
-	// Load environment variables from .env file
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
@@ -37,22 +33,14 @@ func main() {
 		log.Fatalf("Error setting up encryption: %v", err)
 	}
 
-	clientOptions := options.Client().ApplyURI(mongoURI)
-	client, err := mongo.Connect(context.Background(), clientOptions)
+	mongoDatabase, err := mongo.NewMongoDatabase(mongoURI, dbName, dbCollection)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Fatalf("Failed to initialize MongoDB: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		log.Fatalf("Failed to ping MongoDB: %v", err)
-	}
-
-	keyGenRepository := repositories.NewMongoRepository(client, dbName, dbCollection)
+	keyGenRepository := repositories.NewKeyGenRepository(mongoDatabase)
 	keyGenService := services.NewKeyGenService(keyGenRepository, []byte(masterSeed))
-	keyGenHandler := handler.NewKeyGenHandler(keyGenService)
+	keyGenHandler := handlers.NewKeyGenHandler(keyGenService)
 
 	router := gin.Default()
 	keyGenHandler.RegisterRoutes(router)

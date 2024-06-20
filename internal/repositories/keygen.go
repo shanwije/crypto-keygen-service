@@ -2,99 +2,29 @@ package repositories
 
 import (
 	"context"
-	"errors"
-
-	log "github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"crypto-keygen-service/internal/db"
 )
 
-type KeyGenRepository interface {
-	SaveKey(userID int, network string, keyData KeyData) error
-	GetKey(userID int, network string) (KeyData, error)
-	KeyExists(userID int, network string) (bool, error)
-	CreateIndexes() error
+type KeyGenRepository struct {
+	database db.Database
 }
 
-type MongoRepository struct {
-	Collection *mongo.Collection
+func NewKeyGenRepository(database db.Database) *KeyGenRepository {
+	return &KeyGenRepository{database: database}
 }
 
-type KeyData struct {
-	UserID              int    `bson:"user_id"`
-	Network             string `bson:"network"`
-	Address             string `bson:"address"`
-	PublicKey           string `bson:"public_key"`
-	EncryptedPrivateKey string `bson:"private_key"`
+func (r *KeyGenRepository) SaveKey(ctx context.Context, keyData db.KeyData) error {
+	return r.database.SaveKey(ctx, keyData)
 }
 
-func NewMongoRepository(client *mongo.Client, dbName, collectionName string) *MongoRepository {
-	collection := client.Database(dbName).Collection(collectionName)
-	repo := &MongoRepository{Collection: collection}
-	err := repo.CreateIndexes()
-	if err != nil {
-		log.Fatalf("Failed to create indexes: %v", err)
-	}
-	return repo
+func (r *KeyGenRepository) GetKey(ctx context.Context, userID int, network string) (db.KeyData, error) {
+	return r.database.GetKey(ctx, userID, network)
 }
 
-func (r *MongoRepository) CreateIndexes() error {
-	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: "user_id", Value: 1},
-			{Key: "network", Value: 1},
-		},
-		Options: options.Index().SetUnique(true),
-	}
-	_, err := r.Collection.Indexes().CreateOne(context.Background(), indexModel)
-	return err
+func (r *KeyGenRepository) KeyExists(ctx context.Context, userID int, network string) (bool, error) {
+	return r.database.KeyExists(ctx, userID, network)
 }
 
-func (r *MongoRepository) SaveKey(userID int, network string, keyData KeyData) error {
-	log.WithFields(log.Fields{
-		"user_id": userID,
-		"network": network,
-	}).Info("Saving keys to repository")
-
-	filter := bson.M{"user_id": userID, "network": network}
-	update := bson.M{"$set": keyData}
-	_, err := r.Collection.UpdateOne(context.Background(), filter, update, options.Update().SetUpsert(true))
-	if err != nil {
-		log.WithFields(log.Fields{
-			"user_id": userID,
-			"network": network,
-		}).WithError(err).Error("Failed to save keys to repository")
-	}
-	return err
-}
-
-func (r *MongoRepository) GetKey(userID int, network string) (KeyData, error) {
-	filter := bson.M{"user_id": userID, "network": network}
-	var keyData KeyData
-	err := r.Collection.FindOne(context.Background(), filter).Decode(&keyData)
-	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return KeyData{}, errors.New("key not found")
-		}
-		log.WithError(err).Error("Failed to retrieve key from repository")
-		return KeyData{}, err
-	}
-
-	log.WithFields(log.Fields{
-		"user_id": userID,
-		"network": network,
-	}).Info("Retrieved keys from repository")
-
-	return keyData, nil
-}
-
-func (r *MongoRepository) KeyExists(userID int, network string) (bool, error) {
-	filter := bson.M{"user_id": userID, "network": network}
-	count, err := r.Collection.CountDocuments(context.Background(), filter)
-	if err != nil {
-		log.WithError(err).Error("Failed to check if key exists in repository")
-		return false, err
-	}
-	return count > 0, nil
+func (r *KeyGenRepository) CreateIndexes(ctx context.Context) error {
+	return r.database.CreateIndexes(ctx)
 }
