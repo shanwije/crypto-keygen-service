@@ -1,7 +1,7 @@
 package ethereum_test
 
 import (
-	"crypto-keygen-service/internal/network_factory/generators/ethereum"
+	"crypto-keygen-service/internal/util/network_factory/generators/ethereum"
 	"testing"
 )
 
