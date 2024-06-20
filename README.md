@@ -89,9 +89,17 @@ go
     SERVER_PORT=8080
     DB_NAME=crypto-keygen-service
     DB_COLLECTION=crypto-wallet-service
+    GIN_MODE=debug
     MASTER_SEED=6A9D8F4B3C7E1F9A2B8C5D4E7F3A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8
     ENCRYPTION_KEY=4GRrhM8ClnrSmCrDvyFzPKdkJF9NcRkKwxlmIrsYhx0=
    ```
+   
+    Note: to remove the following warning, set GIN_MODE=release in the .env file
+    ```
+    crypto-keygen-service-1  | [GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+    crypto-keygen-service-1  |  - using env:        export GIN_MODE=release
+    crypto-keygen-service-1  |  - using code:       gin.SetMode(gin.ReleaseMode)
+    ```
 
 3. Build and Run
 
@@ -100,13 +108,8 @@ go
     ```bash
     docker-compose up --build
     ```
-   Without Docker
-   Build the application:
 
-    ```bash
-    make build
-    ```
-   Run tests:
+   Run tests ( require mongo running):
     ```bash
     make test
     ```
@@ -117,7 +120,7 @@ go
 
 ## API Endpoints
 
-### Generate / Get Keys and Address
+## Generate / Get Keys and Address
 
 - **URL:** `/keygen/:userId/:network`
 - **Method:** `GET`
@@ -125,9 +128,9 @@ go
     - `userId` (int): User ID
     - `network` (string): Network type ( bitcoin or ethereum )
 
-## API Responses
+### API Responses
 
-### Success Response
+#### Success Response
 
 - **Code:** 200
 - **Content:**
@@ -138,7 +141,7 @@ go
     "private_key": "generated_private_key"
   }
 
-### Error Responses
+#### Error Responses
 
 - **Code:** 400 Bad Request
 
@@ -181,6 +184,20 @@ go
         - **Possible reasons:**
             - Unexpected errors during key generation or database operations.
             - Issues with encrypting/decrypting private keys.
+
+## Health Check
+
+- **URL:** `/health`
+- **Method:** `GET`
+- **Success Response:**
+    - **Code:** 200
+    - **Content:** `{"status": "ok"}`
+- **Error Response:**
+- **Code:** 503 Service Unavailable
+    - **Content:** `{"status": "error", "error": [error_message]}`
+    - **Possible reasons:**
+        - Database connection issues.
+        - Service not running.
 
 ## Project Components
 

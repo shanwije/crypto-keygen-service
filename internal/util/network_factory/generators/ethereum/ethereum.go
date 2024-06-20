@@ -2,7 +2,7 @@ package ethereum
 
 import (
 	"crypto-keygen-service/internal/util/errors"
-	"crypto-keygen-service/internal/util/network_factory"
+	. "crypto-keygen-service/internal/util/network_factory"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/binary"
@@ -16,13 +16,13 @@ type EthereumKeyGen struct {
 	MasterSeed []byte
 }
 
-func (g *EthereumKeyGen) GenerateKeyPairAndAddress(userID int) (network_factory.KeyPairAndAddress, error) {
+func (g *EthereumKeyGen) GenerateKeyPairAndAddress(userID int) (KeyPairAndAddress, error) {
 	// Derive a user-specific seed using HMAC-SHA256
 	userSeed := deriveUserSeed(g.MasterSeed, userID)
 	privateKey, err := crypto.ToECDSA(userSeed)
 	if err != nil {
 		logrus.WithError(err).Error("Failed to generate Ethereum private key")
-		return network_factory.KeyPairAndAddress{}, errors.NewKeyGenError(500, "Failed to generate Ethereum private key")
+		return KeyPairAndAddress{}, errors.NewKeyGenError(500, "Failed to generate Ethereum private key")
 	}
 
 	privateKeyHex := hex.EncodeToString(crypto.FromECDSA(privateKey))
@@ -34,7 +34,7 @@ func (g *EthereumKeyGen) GenerateKeyPairAndAddress(userID int) (network_factory.
 		"public_key": publicKeyHex,
 	}).Info("Generated Ethereum key pair")
 
-	return network_factory.KeyPairAndAddress{
+	return KeyPairAndAddress{
 		Address:    address,
 		PublicKey:  publicKeyHex,
 		PrivateKey: privateKeyHex,
