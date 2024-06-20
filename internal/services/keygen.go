@@ -1,9 +1,7 @@
-package service
+package services
 
 import (
-	"log"
-
-	"crypto-keygen-service/internal/repository"
+	"crypto-keygen-service/internal/repositories"
 	"crypto-keygen-service/internal/util/currency_network_factory"
 	"crypto-keygen-service/internal/util/currency_network_factory/generators/bitcoin"
 	"crypto-keygen-service/internal/util/currency_network_factory/generators/ethereum"
@@ -11,13 +9,13 @@ import (
 	"crypto-keygen-service/internal/util/errors"
 )
 
-type KeyService struct {
+type KeyGenService struct {
 	generators map[string]currency_network_factory.KeyGenerator
-	repository repository.Repository
+	repository repositories.KeyGenRepository
 }
 
-func NewKeyService(repo repository.Repository) *KeyService {
-	service := &KeyService{
+func NewKeyGenService(repo repositories.KeyGenRepository) *KeyGenService {
+	service := &KeyGenService{
 		generators: make(map[string]currency_network_factory.KeyGenerator),
 		repository: repo,
 	}
@@ -27,13 +25,13 @@ func NewKeyService(repo repository.Repository) *KeyService {
 	return service
 }
 
-func (s *KeyService) RegisterGenerator(network string, generator currency_network_factory.KeyGenerator) {
+func (s *KeyGenService) RegisterGenerator(network string, generator currency_network_factory.KeyGenerator) {
 	s.generators[network] = generator
 }
 
 // GetKeysAndAddress retrieves or generates keys and address for a user on a specific network.
-func (s *KeyService) GetKeysAndAddress(userID int, network string) (string, string, string, error) {
-	// Check if keys already exist in the repository
+func (s *KeyGenService) GetKeysAndAddress(userID int, network string) (string, string, string, error) {
+	// Check if keys already exist in the repositories
 	exists, err := s.repository.KeyExists(userID, network)
 	if err != nil {
 		return "", "", "", err
@@ -46,7 +44,7 @@ func (s *KeyService) GetKeysAndAddress(userID int, network string) (string, stri
 	return s.generateAndSaveKeys(userID, network)
 }
 
-func (s *KeyService) retrieveExistingKeys(userID int, network string) (string, string, string, error) {
+func (s *KeyGenService) retrieveExistingKeys(userID int, network string) (string, string, string, error) {
 	address, publicKey, encryptedPrivateKey, err := s.repository.GetKey(userID, network)
 	if err != nil {
 		return "", "", "", err
@@ -60,7 +58,7 @@ func (s *KeyService) retrieveExistingKeys(userID int, network string) (string, s
 	return address, publicKey, privateKey, nil
 }
 
-func (s *KeyService) generateAndSaveKeys(userID int, network string) (string, string, string, error) {
+func (s *KeyGenService) generateAndSaveKeys(userID int, network string) (string, string, string, error) {
 	generator, exists := s.generators[network]
 	if !exists {
 		return "", "", "", errors.ErrUnsupportedNetwork
@@ -75,8 +73,6 @@ func (s *KeyService) generateAndSaveKeys(userID int, network string) (string, st
 	if err != nil {
 		return "", "", "", err
 	}
-
-	log.Printf("Generated encrypted private key: %s", encryptedPrivateKey)
 
 	err = s.repository.SaveKey(userID, network, address, publicKey, encryptedPrivateKey)
 	if err != nil {

@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"crypto-keygen-service/internal/controller"
-	"crypto-keygen-service/internal/repository"
-	"crypto-keygen-service/internal/service"
+	"crypto-keygen-service/internal/handler"
+	"crypto-keygen-service/internal/repositories"
+	"crypto-keygen-service/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -47,11 +47,11 @@ func main() {
 		log.Fatalf("Failed to ping MongoDB: %v", err)
 	}
 
-	repo := repository.NewMongoRepository(client, dbName, dbCollection)
-	keyService := service.NewKeyService(repo)
-	keyController := controller.NewKeyController(keyService)
+	keyGenRepository := repositories.NewMongoRepository(client, dbName, dbCollection)
+	keyGenService := services.NewKeyGenService(keyGenRepository)
+	keyGenHandler := handler.NewKeyGenHandler(keyGenService)
 
 	router := gin.Default()
-	keyController.RegisterRoutes(router)
+	keyGenHandler.RegisterRoutes(router)
 	router.Run(":" + serverPort)
 }
