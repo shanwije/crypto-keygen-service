@@ -11,8 +11,8 @@ import (
 )
 
 type KeyGenRepository interface {
-	SaveKey(userID int, network string, address string, publicKey string, privateKey string) error
-	GetKey(userID int, network string) (string, string, string, error)
+	SaveKey(userID int, network string, keyData KeyData) error
+	GetKey(userID int, network string) (KeyData, error)
 	KeyExists(userID int, network string) (bool, error)
 	CreateIndexes() error
 }
@@ -51,35 +51,34 @@ func (r *MongoRepository) CreateIndexes() error {
 	return err
 }
 
-func (r *MongoRepository) SaveKey(userID int, network string, address string, publicKey string, encryptedPrivateKey string) error {
+func (r *MongoRepository) SaveKey(userID int, network string, keyData KeyData) error {
 	log.WithFields(log.Fields{
 		"user_id": userID,
 		"network": network,
 	}).Info("Saving keys to repository")
 
-	keyData := KeyData{
-		UserID:              userID,
-		Network:             network,
-		Address:             address,
-		PublicKey:           publicKey,
-		EncryptedPrivateKey: encryptedPrivateKey,
-	}
 	filter := bson.M{"user_id": userID, "network": network}
 	update := bson.M{"$set": keyData}
 	_, err := r.collection.UpdateOne(context.Background(), filter, update, options.Update().SetUpsert(true))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"user_id": userID,
+			"network": network,
+		}).WithError(err).Error("Failed to save keys to repository")
+	}
 	return err
 }
 
-func (r *MongoRepository) GetKey(userID int, network string) (string, string, string, error) {
+func (r *MongoRepository) GetKey(userID int, network string) (KeyData, error) {
 	filter := bson.M{"user_id": userID, "network": network}
 	var keyData KeyData
 	err := r.collection.FindOne(context.Background(), filter).Decode(&keyData)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return "", "", "", errors.New("key not found")
+			return KeyData{}, errors.New("key not found")
 		}
 		log.WithError(err).Error("Failed to retrieve key from repository")
-		return "", "", "", err
+		return KeyData{}, err
 	}
 
 	log.WithFields(log.Fields{
@@ -87,7 +86,7 @@ func (r *MongoRepository) GetKey(userID int, network string) (string, string, st
 		"network": network,
 	}).Info("Retrieved keys from repository")
 
-	return keyData.Address, keyData.PublicKey, keyData.EncryptedPrivateKey, nil
+	return keyData, nil
 }
 
 func (r *MongoRepository) KeyExists(userID int, network string) (bool, error) {

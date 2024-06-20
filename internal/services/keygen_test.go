@@ -17,7 +17,6 @@ const sampleEncryptionKey = "4GRrhM8ClnrSmCrDvyFzPKdkJF9NcRkKwxlmIrsYhx0="
 const sampleMasterSeed = "sample-master-seed"
 
 func TestMain(m *testing.M) {
-
 	err := encryption.Setup(sampleEncryptionKey)
 	if err != nil {
 		panic("Failed to set up encryption: " + err.Error())
@@ -50,24 +49,24 @@ func TestServiceConsistency(t *testing.T) {
 	ethereumNetwork := "ethereum"
 
 	// Test Bitcoin consistency
-	btcAddress1, btcPubKey1, btcPrivKey1, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
+	btcKeys1, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
 	assert.NoError(t, err, "Expected no error for Bitcoin key generation")
 
-	btcAddress2, btcPubKey2, btcPrivKey2, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
+	btcKeys2, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
 	assert.NoError(t, err, "Expected no error for Bitcoin key generation")
 
-	assert.Equal(t, btcAddress1, btcAddress2, "Expected same Bitcoin address for same user ID and network")
-	assert.Equal(t, btcPubKey1, btcPubKey2, "Expected same Bitcoin public key for same user ID and network")
-	assert.Equal(t, btcPrivKey1, btcPrivKey2, "Expected same Bitcoin private key for same user ID and network")
+	assert.Equal(t, btcKeys1.Address, btcKeys2.Address, "Expected same Bitcoin address for same user ID and network")
+	assert.Equal(t, btcKeys1.PublicKey, btcKeys2.PublicKey, "Expected same Bitcoin public key for same user ID and network")
+	assert.Equal(t, btcKeys1.PrivateKey, btcKeys2.PrivateKey, "Expected same Bitcoin private key for same user ID and network")
 
 	// Test Ethereum consistency
-	ethAddress1, ethPubKey1, ethPrivKey1, err := service.GetKeysAndAddress(userID, ethereumNetwork)
+	ethKeys1, err := service.GetKeysAndAddress(userID, ethereumNetwork)
 	assert.NoError(t, err, "Expected no error for Ethereum key generation")
 
-	ethAddress2, ethPubKey2, ethPrivKey2, err := service.GetKeysAndAddress(userID, ethereumNetwork)
+	ethKeys2, err := service.GetKeysAndAddress(userID, ethereumNetwork)
 	assert.NoError(t, err, "Expected no error for Ethereum key generation")
 
-	assert.Equal(t, ethAddress1, ethAddress2, "Expected same Ethereum address for same user ID and network")
-	assert.Equal(t, ethPubKey1, ethPubKey2, "Expected same Ethereum public key for same user ID and network")
-	assert.Equal(t, ethPrivKey1, ethPrivKey2, "Expected same Ethereum private key for same user ID and network")
+	assert.Equal(t, ethKeys1.Address, ethKeys2.Address, "Expected same Ethereum address for same user ID and network")
+	assert.Equal(t, ethKeys1.PublicKey, ethKeys2.PublicKey, "Expected same Ethereum public key for same user ID and network")
+	assert.Equal(t, ethKeys1.PrivateKey, ethKeys2.PrivateKey, "Expected same Ethereum private key for same user ID and network")
 }
