@@ -1,7 +1,7 @@
 package bitcoin_test
 
 import (
-	"crypto-keygen-service/internal/util/network_factory/generators/bitcoin"
+	"crypto-keygen-service/internal/network_factory/generators/bitcoin"
 	"strings"
 	"testing"
 )

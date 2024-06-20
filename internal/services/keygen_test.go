@@ -6,6 +6,7 @@ import (
 	"crypto-keygen-service/internal/services"
 	"crypto-keygen-service/internal/util/encryption"
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
@@ -21,6 +22,7 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic("Failed to set up encryption: " + err.Error())
 	}
+
 	code := m.Run()
 	os.Exit(code)
 }
@@ -37,36 +39,43 @@ func setupMongoRepository() *repositories.MongoRepository {
 		panic(err)
 	}
 
-	return repositories.NewMongoRepository(client, "crypto-keygen-service", "crypto-wallet-service")
+	return repositories.NewMongoRepository(client, "crypto-keygen-service-test", "crypto-wallet-service")
 }
 
-func TestServiceConsistency(t *testing.T) {
+func setupKeyGenService(repo repositories.KeyGenRepository) *services.KeyGenService {
+	return services.NewKeyGenService(repo, []byte(sampleMasterSeed))
+}
+
+func TestServiceIntegration(t *testing.T) {
 	repo := setupMongoRepository()
-	service := services.NewKeyGenService(repo, []byte(sampleMasterSeed))
+	service := setupKeyGenService(repo)
 
 	userID := 12345
 	bitcoinNetwork := "bitcoin"
 	ethereumNetwork := "ethereum"
 
-	// Test Bitcoin consistency
-	btcKeys1, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
+	// Clean up any existing data
+	_, _ = repo.Collection.DeleteMany(context.Background(), bson.M{"user_id": userID})
+
+	// Test Bitcoin key generation and retrieval
+	btcResult1, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
 	assert.NoError(t, err, "Expected no error for Bitcoin key generation")
+	assert.NotEmpty(t, btcResult1.Address, "Expected non-empty Bitcoin address")
+	assert.NotEmpty(t, btcResult1.PublicKey, "Expected non-empty Bitcoin public key")
+	assert.NotEmpty(t, btcResult1.PrivateKey, "Expected non-empty Bitcoin private key")
 
-	btcKeys2, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
+	btcResult2, err := service.GetKeysAndAddress(userID, bitcoinNetwork)
 	assert.NoError(t, err, "Expected no error for Bitcoin key generation")
+	assert.Equal(t, btcResult1, btcResult2, "Expected same keys for repeated Bitcoin key generation")
 
-	assert.Equal(t, btcKeys1.Address, btcKeys2.Address, "Expected same Bitcoin address for same user ID and network")
-	assert.Equal(t, btcKeys1.PublicKey, btcKeys2.PublicKey, "Expected same Bitcoin public key for same user ID and network")
-	assert.Equal(t, btcKeys1.PrivateKey, btcKeys2.PrivateKey, "Expected same Bitcoin private key for same user ID and network")
-
-	// Test Ethereum consistency
-	ethKeys1, err := service.GetKeysAndAddress(userID, ethereumNetwork)
+	// Test Ethereum key generation and retrieval
+	ethResult1, err := service.GetKeysAndAddress(userID, ethereumNetwork)
 	assert.NoError(t, err, "Expected no error for Ethereum key generation")
+	assert.NotEmpty(t, ethResult1.Address, "Expected non-empty Ethereum address")
+	assert.NotEmpty(t, ethResult1.PublicKey, "Expected non-empty Ethereum public key")
+	assert.NotEmpty(t, ethResult1.PrivateKey, "Expected non-empty Ethereum private key")
 
-	ethKeys2, err := service.GetKeysAndAddress(userID, ethereumNetwork)
+	ethResult2, err := service.GetKeysAndAddress(userID, ethereumNetwork)
 	assert.NoError(t, err, "Expected no error for Ethereum key generation")
-
-	assert.Equal(t, ethKeys1.Address, ethKeys2.Address, "Expected same Ethereum address for same user ID and network")
-	assert.Equal(t, ethKeys1.PublicKey, ethKeys2.PublicKey, "Expected same Ethereum public key for same user ID and network")
-	assert.Equal(t, ethKeys1.PrivateKey, ethKeys2.PrivateKey, "Expected same Ethereum private key for same user ID and network")
+	assert.Equal(t, ethResult1, ethResult2, "Expected same keys for repeated Ethereum key generation")
 }

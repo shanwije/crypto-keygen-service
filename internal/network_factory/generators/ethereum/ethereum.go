@@ -1,8 +1,8 @@
 package ethereum
 
 import (
+	"crypto-keygen-service/internal/network_factory"
 	"crypto-keygen-service/internal/util/errors"
-	"crypto-keygen-service/internal/util/network_factory"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/binary"

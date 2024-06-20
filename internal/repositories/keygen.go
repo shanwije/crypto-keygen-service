@@ -18,7 +18,7 @@ type KeyGenRepository interface {
 }
 
 type MongoRepository struct {
-	collection *mongo.Collection
+	Collection *mongo.Collection
 }
 
 type KeyData struct {
@@ -31,7 +31,7 @@ type KeyData struct {
 
 func NewMongoRepository(client *mongo.Client, dbName, collectionName string) *MongoRepository {
 	collection := client.Database(dbName).Collection(collectionName)
-	repo := &MongoRepository{collection: collection}
+	repo := &MongoRepository{Collection: collection}
 	err := repo.CreateIndexes()
 	if err != nil {
 		log.Fatalf("Failed to create indexes: %v", err)
@@ -47,7 +47,7 @@ func (r *MongoRepository) CreateIndexes() error {
 		},
 		Options: options.Index().SetUnique(true),
 	}
-	_, err := r.collection.Indexes().CreateOne(context.Background(), indexModel)
+	_, err := r.Collection.Indexes().CreateOne(context.Background(), indexModel)
 	return err
 }
 
@@ -59,7 +59,7 @@ func (r *MongoRepository) SaveKey(userID int, network string, keyData KeyData) e
 
 	filter := bson.M{"user_id": userID, "network": network}
 	update := bson.M{"$set": keyData}
-	_, err := r.collection.UpdateOne(context.Background(), filter, update, options.Update().SetUpsert(true))
+	_, err := r.Collection.UpdateOne(context.Background(), filter, update, options.Update().SetUpsert(true))
 	if err != nil {
 		log.WithFields(log.Fields{
 			"user_id": userID,
@@ -72,7 +72,7 @@ func (r *MongoRepository) SaveKey(userID int, network string, keyData KeyData) e
 func (r *MongoRepository) GetKey(userID int, network string) (KeyData, error) {
 	filter := bson.M{"user_id": userID, "network": network}
 	var keyData KeyData
-	err := r.collection.FindOne(context.Background(), filter).Decode(&keyData)
+	err := r.Collection.FindOne(context.Background(), filter).Decode(&keyData)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return KeyData{}, errors.New("key not found")
@@ -91,7 +91,7 @@ func (r *MongoRepository) GetKey(userID int, network string) (KeyData, error) {
 
 func (r *MongoRepository) KeyExists(userID int, network string) (bool, error) {
 	filter := bson.M{"user_id": userID, "network": network}
-	count, err := r.collection.CountDocuments(context.Background(), filter)
+	count, err := r.Collection.CountDocuments(context.Background(), filter)
 	if err != nil {
 		log.WithError(err).Error("Failed to check if key exists in repository")
 		return false, err

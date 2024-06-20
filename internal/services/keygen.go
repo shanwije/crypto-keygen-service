@@ -1,12 +1,12 @@
 package services
 
 import (
+	"crypto-keygen-service/internal/network_factory"
+	"crypto-keygen-service/internal/network_factory/generators/bitcoin"
+	"crypto-keygen-service/internal/network_factory/generators/ethereum"
 	"crypto-keygen-service/internal/repositories"
 	"crypto-keygen-service/internal/util/encryption"
 	"crypto-keygen-service/internal/util/errors"
-	"crypto-keygen-service/internal/util/network_factory"
-	"crypto-keygen-service/internal/util/network_factory/generators/bitcoin"
-	"crypto-keygen-service/internal/util/network_factory/generators/ethereum"
 	log "github.com/sirupsen/logrus"
 )
 
