@@ -2,29 +2,43 @@ package bitcoin
 
 import (
 	"crypto-keygen-service/internal/util/errors"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 )
 
-type BitcoinKeyGen struct{}
+type BitcoinKeyGen struct {
+	MasterSeed []byte
+}
 
-func (g *BitcoinKeyGen) GenerateKeyPair() (string, string, string, error) {
-	privateKey, err := btcec.NewPrivateKey(btcec.S256())
-	if err != nil {
-		return "", "", "", errors.NewAPIError(500, "Failed to generate Bitcoin private key")
-	}
-	publicKey := privateKey.PubKey()
+func (g *BitcoinKeyGen) GenerateKeyPair(userID int) (string, string, string, error) {
+	// Derive a user-specific seed using HMAC-SHA256
+	userSeed := deriveUserSeed(g.MasterSeed, userID)
+
+	privateKey, publicKey := btcec.PrivKeyFromBytes(btcec.S256(), userSeed)
+
 	pubKeyHash := btcutil.Hash160(publicKey.SerializeCompressed())
 
-	// considering this is an assignment haven't set a flag to switch testnet params
-	address, err := btcutil.NewAddressWitnessPubKeyHash(pubKeyHash, &chaincfg.TestNet3Params)
+	address, err := btcutil.NewAddressPubKeyHash(pubKeyHash, &chaincfg.MainNetParams)
 	if err != nil {
 		return "", "", "", errors.NewAPIError(500, "Failed to generate Bitcoin address")
 	}
 	publicKeyHex := hex.EncodeToString(publicKey.SerializeCompressed())
-	privateKeyWIF, err := btcutil.NewWIF(privateKey, &chaincfg.TestNet3Params, true)
+	privateKeyWIF, err := btcutil.NewWIF(privateKey, &chaincfg.MainNetParams, true)
+	if err != nil {
+		log.WithError(err).Error("Failed to encode Bitcoin private key to WIF")
+		return "", "", "", errors.NewAPIError(500, "Failed to encode Bitcoin private key to WIF")
+	}
 
 	return address.EncodeAddress(), publicKeyHex, privateKeyWIF.String(), nil
+}
+
+func deriveUserSeed(masterSeed []byte, userID int) []byte {
+	h := hmac.New(sha256.New, masterSeed)
+	binary.Write(h, binary.BigEndian, int64(userID))
+	return h.Sum(nil)
 }
