@@ -2,11 +2,10 @@ package mongo
 
 import (
 	"context"
-	"crypto-keygen-service/internal/db"
+	dbi "crypto-keygen-service/internal/db"
 	"errors"
 	"time"
 
-	dbi "crypto-keygen-service/internal/db"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -54,7 +53,7 @@ func (db *MongoDatabase) CreateIndexes(ctx context.Context) error {
 	return err
 }
 
-func (db *MongoDatabase) SaveKey(ctx context.Context, keyData db.KeyData) error {
+func (db *MongoDatabase) SaveKey(ctx context.Context, keyData dbi.KeyData) error {
 	log.WithFields(log.Fields{
 		"user_id": keyData.UserID,
 		"network": keyData.Network,
@@ -72,7 +71,7 @@ func (db *MongoDatabase) SaveKey(ctx context.Context, keyData db.KeyData) error 
 	return err
 }
 
-func (db *MongoDatabase) GetKey(ctx context.Context, userID int, network string) (db.KeyData, error) {
+func (db *MongoDatabase) GetKey(ctx context.Context, userID int, network string) (dbi.KeyData, error) {
 	filter := bson.M{"user_id": userID, "network": network}
 	var keyData dbi.KeyData
 	err := db.Collection.FindOne(ctx, filter).Decode(&keyData)
