@@ -128,6 +128,7 @@ go
     - `userId` (int): User ID
     - `network` (string): Network type ( bitcoin or ethereum )
 
+(Eg: http://localhost:8080/keygen/1/bitcoin)
 ### API Responses
 
 #### Success Response
@@ -153,6 +154,9 @@ go
       ```
         - **Possible reasons:**
             - `userId` is not a positive integer.
+              - Eg: 
+                  - http://localhost:8080/keygen/invalid_user_id/bitcoin, 
+                - http://localhost:8080/keygen/-1/bitcoin
 
     - **Content:**
       ```json
@@ -161,8 +165,12 @@ go
       }
       ```
         - **Possible reasons:**
-            - `network` parameter is missing.
-
+            - `network` parameter is missing or invalid.
+              
+              - Eg: 
+                - http://localhost:8080/keygen/1, 
+                - http://localhost:8080/keygen/1/invalid_network
+                
     - **Content:**
       ```json
       {
@@ -198,6 +206,8 @@ go
     - **Possible reasons:**
         - Database connection issues.
         - Service not running.
+
+(Eg: http://localhost:8080/health)
 
 ## Project Components
 
