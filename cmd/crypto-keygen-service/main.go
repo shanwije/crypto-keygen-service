@@ -36,6 +36,9 @@ func main() {
 	keyGenService := services.NewKeyGenService(keyGenRepository, []byte(masterSeed))
 	keyGenHandler := handlers.NewKeyGenHandler(keyGenService)
 
+	if os.Getenv("GIN_MODE") == "release" {
+		gin.SetMode(gin.ReleaseMode)
+	}
 	router := gin.Default()
 	router.GET("/health", func(c *gin.Context) {
 		healthCheck(c, database)
@@ -74,7 +77,7 @@ func loadEnv() {
 }
 
 func validateEnv() {
-	requiredVars := []string{"MONGODB_URI", "SERVER_PORT", "DB_NAME", "DB_COLLECTION", "ENCRYPTION_KEY", "MASTER_SEED"}
+	requiredVars := []string{"MONGODB_URI", "SERVER_PORT", "DB_NAME", "DB_COLLECTION", "ENCRYPTION_KEY", "MASTER_SEED", "GIN_MODE"}
 	for _, v := range requiredVars {
 		if os.Getenv(v) == "" {
 			log.Fatalf("Environment variable %s is not set", v)
@@ -102,7 +105,7 @@ func healthCheck(c *gin.Context, database *mongo.MongoDatabase) {
 	defer cancel()
 
 	if err := database.Client.Ping(ctx, readpref.Primary()); err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": err.Error()})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "error", "error": err.Error()})
 		return
 	}
 

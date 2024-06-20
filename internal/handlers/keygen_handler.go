@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"strings"
 
 	"crypto-keygen-service/internal/services"
 	"crypto-keygen-service/internal/util/errors"
@@ -41,7 +40,7 @@ func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 	userId, err := strconv.Atoi(userIdStr)
 	if err != nil || userId <= 0 {
 		log.WithError(err).Error("Invalid userId parameter")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "userId must be a positive integer"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errors.ErrInvalidUserID.Message})
 		return
 	}
 	req.UserID = userId
@@ -50,13 +49,13 @@ func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 	req.Network = c.Param("network")
 	if req.Network == "" {
 		log.Error("Network parameter is required")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Network is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errors.ErrNetworkRequired.Message})
 		return
 	}
 
 	if err := validate.Struct(req); err != nil {
 		log.WithError(err).Error("Validation error")
-		c.JSON(http.StatusBadRequest, gin.H{"error": formatValidationError(err)})
+		c.JSON(http.StatusBadRequest, gin.H{"error": errors.FormatValidationError(err)})
 		return
 	}
 
@@ -71,31 +70,14 @@ func (h *KeyGenHandler) handleGenerateKeyPair(c *gin.Context) {
 		"network": req.Network,
 	}).Info("Successfully acquired keys")
 
-	c.JSON(http.StatusOK, KeyGenResponse{
-		Address:    keyPairAndAddress.Address,
-		PublicKey:  keyPairAndAddress.PublicKey,
-		PrivateKey: keyPairAndAddress.PrivateKey,
-	})
-}
-
-func formatValidationError(err error) string {
-	var sb strings.Builder
-	for _, err := range err.(validator.ValidationErrors) {
-		switch err.Field() {
-		case "UserID":
-			switch err.Tag() {
-			case "required":
-				sb.WriteString("UserID is required. ")
-			case "gt":
-				sb.WriteString("UserID must be greater than 0. ")
-			}
-		case "Network":
-			if err.Tag() == "required" {
-				sb.WriteString("Network is required. ")
-			}
-		}
-	}
-	return strings.TrimSpace(sb.String())
+	c.JSON(
+		http.StatusOK,
+		KeyGenResponse{
+			Address:    keyPairAndAddress.Address,
+			PublicKey:  keyPairAndAddress.PublicKey,
+			PrivateKey: keyPairAndAddress.PrivateKey,
+		},
+	)
 }
 
 func handleServiceError(c *gin.Context, err error, userID int, network string) {
