@@ -2,11 +2,15 @@
 
 ## Overview
 
-Crypto Keygen Service is a backend service that exposes a REST API for generating Bitcoin and Ethereum crypto addresses. The service deterministically generates and securely persists the addresses along with their corresponding public and private keys. This design ensures consistent key generation, easy retrieval, and robust security, making it ideal for applications requiring reliable and efficient key management.
+Crypto Keygen Service is a backend service that exposes a REST API for generating Bitcoin and Ethereum crypto addresses.
+The service deterministically generates and securely persists the addresses along with their corresponding public and
+private keys. This design ensures consistent key generation, easy retrieval, and robust security, making it ideal for
+applications requiring reliable and efficient key management.
 
 ## Features
 
-- Generate deterministic Bitcoin and Ethereum addresses. ( Designed for extensibility to support more networks in the future.)
+- Generate deterministic Bitcoin and Ethereum addresses. ( Designed for extensibility to support more networks in the
+  future.)
 - Persists the generated addresses and keys ( private key is encrypted).
 - Return the generated / persisted address, public key, and private key.
 - Includes unit tests to ensure correctness.
@@ -76,7 +80,8 @@ go
    git clone https://github.com/shanwije/crypto-keygen-service
    cd crypto-keygen-service
 
-2. Create a .env file in the root directory with the following content ( refer to .env.example, the given encryption key, and seed
+2. Create a .env file in the root directory with the following content ( refer to .env.example, the given encryption
+   key, and seed
    are sample keys. Do not use the same in prod):
 
    ```bash
@@ -120,32 +125,62 @@ go
     - `userId` (int): User ID
     - `network` (string): Network type ( bitcoin or ethereum )
 
-- **Success Response:**
-    - **Code:** 200
-    - **Content:**
-      ```json
-      {
-        "address": "generated_address",
-        "public_key": "generated_public_key",
-        "private_key": "generated_private_key"
-      }
-      ```
+## API Responses
 
-- **Error Response:**
-    - **Code:** 400 Bad Request
+### Success Response
+
+- **Code:** 200
+- **Content:**
+  ```json
+  {
+    "address": "generated_address",
+    "public_key": "generated_public_key",
+    "private_key": "generated_private_key"
+  }
+
+### Error Responses
+
+- **Code:** 400 Bad Request
+
     - **Content:**
       ```json
       {
-        "error": "Invalid request parameters"
+        "error": "userId must be a positive integer"
       }
       ```
-    - **Code:** 500 Internal Server Error
+        - **Possible reasons:**
+            - `userId` is not a positive integer.
+
     - **Content:**
       ```json
       {
-        "error": "Error message"
+        "error": "Network is required"
       }
       ```
+        - **Possible reasons:**
+            - `network` parameter is missing.
+
+    - **Content:**
+      ```json
+      {
+        "error": "Validation error: [specific error details]"
+      }
+      ```
+        - **Possible reasons:**
+            - Specific validation errors related to `userId` and `network` parameters.
+
+
+- **Code:** 500 Internal Server Error
+
+    - **Content:**
+      ```json
+      {
+        "error": "Internal server error"
+      }
+      ```
+        - **Possible reasons:**
+            - Unexpected errors during key generation or database operations.
+            - Issues with encrypting/decrypting private keys.
 
 ## Project Components
 
