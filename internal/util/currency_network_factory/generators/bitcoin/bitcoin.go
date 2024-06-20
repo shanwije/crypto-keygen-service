@@ -6,9 +6,11 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
+	log "github.com/sirupsen/logrus"
 )
 
 type BitcoinKeyGen struct {
@@ -25,6 +27,7 @@ func (g *BitcoinKeyGen) GenerateKeyPair(userID int) (string, string, string, err
 
 	address, err := btcutil.NewAddressPubKeyHash(pubKeyHash, &chaincfg.MainNetParams)
 	if err != nil {
+		log.WithError(err).Error("Failed to generate Bitcoin address")
 		return "", "", "", errors.NewAPIError(500, "Failed to generate Bitcoin address")
 	}
 	publicKeyHex := hex.EncodeToString(publicKey.SerializeCompressed())
@@ -33,6 +36,8 @@ func (g *BitcoinKeyGen) GenerateKeyPair(userID int) (string, string, string, err
 		log.WithError(err).Error("Failed to encode Bitcoin private key to WIF")
 		return "", "", "", errors.NewAPIError(500, "Failed to encode Bitcoin private key to WIF")
 	}
+
+	log.Info("Generated Bitcoin key pair")
 
 	return address.EncodeAddress(), publicKeyHex, privateKeyWIF.String(), nil
 }

@@ -8,6 +8,7 @@ require (
 	github.com/ethereum/go-ethereum v1.14.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/joho/godotenv v1.5.1
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	go.mongodb.org/mongo-driver v1.15.1
 	golang.org/x/crypto v0.23.0
