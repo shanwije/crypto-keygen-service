@@ -6,20 +6,40 @@ import (
 )
 
 func TestGenerateKeyPair(t *testing.T) {
-	keyGen := &ethereum.EthereumKeyGen{}
+	masterSeed := []byte("test-master-seed-1234")
+	keyGen := &ethereum.EthereumKeyGen{MasterSeed: masterSeed}
 
-	address, publicKey, privateKey, err := keyGen.GenerateKeyPair()
+	userID := 1
+
+	address1, publicKey1, privateKey1, err := keyGen.GenerateKeyPair(userID)
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	if len(address) == 0 {
+	address2, publicKey2, privateKey2, err := keyGen.GenerateKeyPair(userID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	if address1 != address2 {
+		t.Errorf("Expected the same address for the same user ID, got %s and %s", address1, address2)
+	}
+
+	if publicKey1 != publicKey2 {
+		t.Errorf("Expected the same public key for the same user ID, got %s and %s", publicKey1, publicKey2)
+	}
+
+	if privateKey1 != privateKey2 {
+		t.Errorf("Expected the same private key for the same user ID, got %s and %s", privateKey1, privateKey2)
+	}
+
+	if len(address1) == 0 {
 		t.Errorf("Expected a valid Ethereum address, got an empty string")
 	}
-	if len(publicKey) == 0 {
+	if len(publicKey1) == 0 {
 		t.Errorf("Expected a valid public key, got an empty string")
 	}
-	if len(privateKey) == 0 {
+	if len(privateKey1) == 0 {
 		t.Errorf("Expected a valid private key, got an empty string")
 	}
 }

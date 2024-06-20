@@ -28,7 +28,10 @@ func main() {
 	dbName := os.Getenv("DB_NAME")
 	dbCollection := os.Getenv("DB_COLLECTION")
 	encryptionKey := os.Getenv("ENCRYPTION_KEY")
-
+	masterSeed := os.Getenv("MASTER_SEED")
+	if masterSeed == "" {
+		log.Fatalf("MASTER_SEED environment variable is not set")
+	}
 	err = encryption.Setup(encryptionKey)
 	if err != nil {
 		log.Fatalf("Error setting up encryption: %v", err)
@@ -48,7 +51,7 @@ func main() {
 	}
 
 	keyGenRepository := repositories.NewMongoRepository(client, dbName, dbCollection)
-	keyGenService := services.NewKeyGenService(keyGenRepository)
+	keyGenService := services.NewKeyGenService(keyGenRepository, []byte(masterSeed))
 	keyGenHandler := handler.NewKeyGenHandler(keyGenService)
 
 	router := gin.Default()
