@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 	"errors"
-	"log"
 
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -52,7 +52,10 @@ func (r *MongoRepository) CreateIndexes() error {
 }
 
 func (r *MongoRepository) SaveKey(userID int, network string, address string, publicKey string, encryptedPrivateKey string) error {
-	log.Printf("Saving encrypted private key: %s", encryptedPrivateKey)
+	log.WithFields(log.Fields{
+		"user_id": userID,
+		"network": network,
+	}).Info("Saving keys to repository")
 
 	keyData := KeyData{
 		UserID:              userID,
@@ -75,10 +78,14 @@ func (r *MongoRepository) GetKey(userID int, network string) (string, string, st
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return "", "", "", errors.New("key not found")
 		}
+		log.WithError(err).Error("Failed to retrieve key from repository")
 		return "", "", "", err
 	}
 
-	log.Printf("Retrieved encrypted private key: %s", keyData.EncryptedPrivateKey)
+	log.WithFields(log.Fields{
+		"user_id": userID,
+		"network": network,
+	}).Info("Retrieved keys from repository")
 
 	return keyData.Address, keyData.PublicKey, keyData.EncryptedPrivateKey, nil
 }
@@ -87,6 +94,7 @@ func (r *MongoRepository) KeyExists(userID int, network string) (bool, error) {
 	filter := bson.M{"user_id": userID, "network": network}
 	count, err := r.collection.CountDocuments(context.Background(), filter)
 	if err != nil {
+		log.WithError(err).Error("Failed to check if key exists in repository")
 		return false, err
 	}
 	return count > 0, nil

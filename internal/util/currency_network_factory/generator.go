@@ -1,5 +1,5 @@
 package currency_network_factory
 
 type KeyGenerator interface {
-	GenerateKeyPair() (string, string, string, error)
+	GenerateKeyPair(userID int) (string, string, string, error)
 }

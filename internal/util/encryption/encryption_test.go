@@ -1,9 +1,21 @@
 package encryption
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+const sampleEncryptionKey = "4GRrhM8ClnrSmCrDvyFzPKdkJF9NcRkKwxlmIrsYhx0="
+
+func TestMain(m *testing.M) {
+	err := Setup(sampleEncryptionKey)
+	if err != nil {
+		panic("Failed to set up encryption: " + err.Error())
+	}
+
+	m.Run()
+}
 
 func TestEncryptDecrypt(t *testing.T) {
 	originalText := "cRwricgLMcpyF4nXqJS8gDdfrtpfqjPmkq9K7EdUkJf79yPffY6N"
