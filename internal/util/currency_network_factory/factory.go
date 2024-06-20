@@ -1,9 +1,9 @@
-package keys
+package currency_network_factory
 
 import (
-	"crypto-keygen-service/internal/bitcoin"
-	"crypto-keygen-service/internal/errors"
-	"crypto-keygen-service/internal/ethereum"
+	"crypto-keygen-service/internal/util/currency_network_factory/generators/bitcoin"
+	"crypto-keygen-service/internal/util/currency_network_factory/generators/ethereum"
+	"crypto-keygen-service/internal/util/errors"
 )
 
 func GetKeyGenerator(network string) (KeyGenerator, error) {

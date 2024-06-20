@@ -1,4 +1,4 @@
-package keys
+package currency_network_factory
 
 import (
 	"testing"

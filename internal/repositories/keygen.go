@@ -1,15 +1,16 @@
-package repository
+package repositories
 
 import (
 	"context"
 	"errors"
+	"log"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 )
 
-type Repository interface {
+type KeyGenRepository interface {
 	SaveKey(userID int, network string, address string, publicKey string, privateKey string) error
 	GetKey(userID int, network string) (string, string, string, error)
 	KeyExists(userID int, network string) (bool, error)
